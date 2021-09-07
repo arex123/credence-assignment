@@ -1,79 +1,117 @@
 const { request, response } = require("express");
 const express = require("express");
-const port = 3000;
 const app = express();
-const bodyParser = require('body-parser');
-const routes = require('./routes/routes'); //it will link the route to this page
-const mongoose = require('mongoose');
+const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
 const router = express.Router();
 
 
-// app.use(bodyParser.json());
-// app.use(bodyParser.urlencoded({
-//     extended: true,
-// }));
+app.use(express.json());
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
 
+const url = "mongodb://localhost:27017/filmsNames_db";
+
+var db = mongoose.connection;
+mongoose
+  .connect(url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("DB Connected Successfully");
+  });
 
 const Schema = mongoose.Schema;
 
-const PostSchema = new Schema({
-    name:{
-        type: String,
-        required: true,
+const filmSchema = new Schema({
+  name:{
+  type: String,
+   required:true
+  }
+   ,
+  img: {
+    type: String,
+     required:true
     },
-    image,
-    summary
+  summary: {
+    type: String,
+     required:true
+    },
 });
 
+const Film = mongoose.model("film", filmSchema);
 
-// routes(app);
-
-
-app.get('/users', (request, response) => {
-       response.send(users);
+const film1 = new Film({
+  name: "Harry Potter and the Order of the Phoenix",
+  img: "https://bit.ly/2IcnSwz",
+  summary:
+    "Harry Potter and Dumbledore's warning about the return of Lord Voldemort is not heeded by the wizard authorities who, in turn, look to undermine Dumbledore's authority at Hogwarts and discredit Harry.",
 });
 
+const film2 = new Film({
+  name: "Harry Potter and the Order of the Phoenix",
+  img: "https://bit.ly/2IcnSwz",
+  summary:
+    "Harry Potter and Dumbledore's warning about the return of Lord Voldemort is not heeded by the wizard authorities who, in turn, look to undermine Dumbledore's authority at Hogwarts and discredit Harry.",
+});
+const film3 = new Film({
+  name: "Harry Potter and the Order of the Phoenix",
+  img: "https://bit.ly/2IcnSwz",
+  summary:
+    "Harry Potter and Dumbledore's warning about the return of Lord Voldemort is not heeded by the wizard authorities who, in turn, look to undermine Dumbledore's authority at Hogwarts and discredit Harry.",
+});
+
+const defaultName = [film1,film2,film3];
+
+
+//read
+app.get("/", async (req, res) => {
+    try {
+    
+      Film.insertMany(defaultName,function(err) {
+        if(err){
+          console.log(err);
+        }
+        else{
+          console.log("items succesfully inserted");
+        }
+
+      });
+    // const films = Film.find();
+    const films = await Film.find()
+    res.json(films);
+
+    res.json(films);
+  } catch (err) {
+    res.send(err);
+  }
+});
 
 
 //create
-router.post('/', async (req, res) => {
-    const newPost = new Posts(req.body);
-    try {
-    const post = await newPost.save();
-    if(!post) throw Error('Something went wrong with the post')
-    res.status(200).json(post);
-    } catch {
-    res.status(400).json({msg: error})
+app.post('/',async(req,res)=>{
+    const film = new Film({
+        name:req.body.name,
+        image:req.body.img,
+        summary:req.body.summary
+    })
+
+    try{
+        const data = await film.save()
+        res.json(data)
+    }catch(err){
+        res.json('Error');
     }
-    });
 
-    
-//get all posts
-router.get('/', async (req, res) => {
-    try {
-    const posts = await Posts.find();
-    if(!posts) throw Error('No Items');
-    res.status(200).json(posts);
-    }catch(err) {
-    res.status(400).json({mesg: err})
-    }
-    });
+})
 
 
-//get one post
-router.get('/:id', async (req, res) => {
-    try {
-    const post = await Posts.findById(req.params.id);
-    if(!post) throw Error('No Items');
-    res.status(200).json(post);
-    }catch(err) {
-    res.status(400).json({mesg: err})
-    }
-    });
-
-    
 //update
-router.patch('/:id', async (req, res) => {
+app.patch('/:id', async (req, res) => {
     try {
     const post = await Posts.findByIdAndUpdate(req.params.id, req.body);
     if(!post) throw Error('Something went wrong while updating the post');
@@ -84,8 +122,8 @@ router.patch('/:id', async (req, res) => {
     });
 
 
-//delete
-router.delete('/:id', async (req, res) => {
+ //delete
+app.delete('/:id', async (req, res) => {
     try {
     const post = await Posts.findByIdAndDelete(req.params.id);
     if(!post) throw Error('No post found!');
@@ -97,10 +135,8 @@ router.delete('/:id', async (req, res) => {
 
 
 
+const port = 3000;
 
-
-const server = app.listen(port, (error) => {
-    if (error) return console.log(`Error: ${error}`);
- 
-    console.log(`Server listening on port ${server.address().port}`);
+app.listen(port, (error) => {
+  console.log(`Server listening on port ${port}`);
 });
