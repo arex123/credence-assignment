@@ -1,9 +1,6 @@
-const { request, response } = require("express");
 const express = require("express");
 const app = express();
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const router = express.Router();
 
 
 app.use(express.json());
@@ -45,33 +42,30 @@ const filmSchema = new Schema({
 
 const Film = mongoose.model("film", filmSchema);
 
-const film1 = new Film({
+const defaultName=
+[{
   name: "Harry Potter and the Order of the Phoenix",
   img: "https://bit.ly/2IcnSwz",
-  summary:
-    "Harry Potter and Dumbledore's warning about the return of Lord Voldemort is not heeded by the wizard authorities who, in turn, look to undermine Dumbledore's authority at Hogwarts and discredit Harry.",
-});
-
-const film2 = new Film({
-  name: "Harry Potter and the Order of the Phoenix",
-  img: "https://bit.ly/2IcnSwz",
-  summary:
-    "Harry Potter and Dumbledore's warning about the return of Lord Voldemort is not heeded by the wizard authorities who, in turn, look to undermine Dumbledore's authority at Hogwarts and discredit Harry.",
-});
-const film3 = new Film({
-  name: "Harry Potter and the Order of the Phoenix",
-  img: "https://bit.ly/2IcnSwz",
-  summary:
-    "Harry Potter and Dumbledore's warning about the return of Lord Voldemort is not heeded by the wizard authorities who, in turn, look to undermine Dumbledore's authority at Hogwarts and discredit Harry.",
-});
-
-const defaultName = [film1,film2,film3];
+  summary: "Harry Potter and Dumbledore's warning about the return of Lord Voldemort is not heeded by the wizard authorities who, in turn, look to undermine Dumbledore's authority at Hogwarts and discredit Harry. "
+  }, {
+  name: "The Lord of the Rings: The Fellowship of the Ring",
+  img: "https://bit.ly/2tC1Lcg",
+  summary: "A young hobbit, Frodo, who has found the One Ring that belongs to the Dark Lord Sauron, begins his journey with eight companions to Mount Doom, the only place where it can be destroyed."
+  }, {
+  name: "Avengers: Endgame",
+  img: "https://bit.ly/2Pzczlb",
+  summary: "Adrift in space with no food or water, Tony Stark sends a message to Pepper Potts as his oxygen supply starts to dwindle. Meanwhile, the remaining Avengers -- Thor, Black Widow, Captain America, and Bruce Banner -- must figure out a way to bring back their vanquished allies for an epic showdown with Thanos -- the evil demigod who decimated the planet and the universe."
+  }
+]
 
 
 //read
 app.get("/", async (req, res) => {
-    try {
+  
+  db.collection('films').count(function(err, count) {
     
+
+    if( count == 0) {
       Film.insertMany(defaultName,function(err) {
         if(err){
           console.log(err);
@@ -81,30 +75,33 @@ app.get("/", async (req, res) => {
         }
 
       });
-    // const films = Film.find();
-    const films = await Film.find()
-    res.json(films);
+    }
+    else {
+        console.log("Found Records : " + count);
+    }
+});
+  try{
+        const films = await Film.find();
+        res.send(films);
 
-    res.json(films);
-  } catch (err) {
-    res.send(err);
+  }catch(err){
+        res.send(err);
   }
+
+
 });
 
 
 //create
 app.post('/',async(req,res)=>{
-    const film = new Film({
-        name:req.body.name,
-        image:req.body.img,
-        summary:req.body.summary
-    })
 
     try{
+      const film = new Film(req.body)
+      console.log(film);
         const data = await film.save()
         res.json(data)
     }catch(err){
-        res.json('Error');
+        res.json(err);
     }
 
 })
@@ -113,25 +110,26 @@ app.post('/',async(req,res)=>{
 //update
 app.patch('/:id', async (req, res) => {
     try {
-    const post = await Posts.findByIdAndUpdate(req.params.id, req.body);
-    if(!post) throw Error('Something went wrong while updating the post');
-    res.status(200).json({success: true});
+    const updatefilm = await Film.findByIdAndUpdate(req.params.id, req.body,{ new:true});
+    res.send(updatefilm);
     }catch(err) {
-    res.status(400).json({msg:err});
+    res.send(err)
     }
     });
 
 
  //delete
 app.delete('/:id', async (req, res) => {
-    try {
-    const post = await Posts.findByIdAndDelete(req.params.id);
-    if(!post) throw Error('No post found!');
-    res.status(200).json({success: true})
-    }catch(err) {
-    res.status(400).json({msg: error})
-    }
-    });
+
+  try {
+    const temp = await Film.findByIdAndRemove(req.params.id);
+    res.send("document deleted: "+temp)
+  
+  }
+ catch(err) {
+    res.send(err);
+ }  
+});
 
 
 
